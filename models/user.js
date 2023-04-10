@@ -2,6 +2,8 @@
 
 /** User of the site. */
 
+const db = require("../db");
+
 class User {
 
   /** Register new user. Returns
@@ -9,6 +11,16 @@ class User {
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
+    const results = await db.query(
+      `INSERT INTO users (username, password, first_name, last_name, phone)
+        VALUES ($1, $2, $3, $4, $5)
+      RETURNING username, password, first_name, last_name, phone`,
+      [username, password, first_name, last_name, phone]
+    );
+    //console.log("@@@ RESULTS:",results.rows);
+    const user = results.rows[0];
+
+    return user;
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
@@ -64,3 +76,8 @@ class User {
 
 
 module.exports = User;
+
+
+// const u = new User();
+// const resp = await User.register('test', 'password', 'first', 'last', '555555555');
+// console.log("RETURNS:",resp);
