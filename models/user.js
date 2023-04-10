@@ -5,7 +5,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
-const { UnauthorizedError } = require("../expressError");
+const { UnauthorizedError, NotFoundError } = require("../expressError");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class User {
@@ -25,7 +25,10 @@ class User {
     );
     //console.log("@@@ RESULTS:",results.rows);
     const user = results.rows[0];
-
+    if (!user){
+      throw new Error(`Did not create user ${username}.`);
+    }
+    User.updateLoginTimestamp(user.username);
     return user;
   }
 
@@ -67,6 +70,17 @@ class User {
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
+    const results = await db.query(
+      `SELECT username,
+              first_name,
+              last_name,
+              phone,
+              join_at,
+              last_login_at
+        FROM users
+        `
+    );
+
   }
 
   /** Get: get user by username
@@ -79,6 +93,22 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
+    const results = await db.query(
+      `SELECT username,
+              first_name,
+              last_name,
+              phone,
+              join_at,
+              last_login_at
+        FROM users
+        WHERE username=$1`, [username]
+    );
+    const user = results.rows[0];
+
+    if (!user){
+      throw new Error(`User ${username} not found.`);
+    }
+    return user;
   }
 
   /** Return messages from this user.
