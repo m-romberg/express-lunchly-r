@@ -2,7 +2,11 @@
 
 /** User of the site. */
 
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const db = require("../db");
+const { UnauthorizedError } = require("../expressError");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class User {
 
@@ -11,11 +15,13 @@ class User {
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+
     const results = await db.query(
       `INSERT INTO users (username, password, first_name, last_name, phone)
         VALUES ($1, $2, $3, $4, $5)
       RETURNING username, password, first_name, last_name, phone`,
-      [username, password, first_name, last_name, phone]
+      [username, hashedPassword, first_name, last_name, phone]
     );
     //console.log("@@@ RESULTS:",results.rows);
     const user = results.rows[0];
@@ -26,6 +32,19 @@ class User {
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
+    const results = await db.query(
+      `SELECT password
+        FROM users
+        WHERE username = $1`,
+      [username]);
+    const user = results.rows[0];
+    console.log("@@@ User:", user);
+    if (user) {
+      if (await bcrypt.compare(password, user.password) === true) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Update last_login_at for user */
@@ -76,8 +95,3 @@ class User {
 
 
 module.exports = User;
-
-
-// const u = new User();
-// const resp = await User.register('test', 'password', 'first', 'last', '555555555');
-// console.log("RETURNS:",resp);
