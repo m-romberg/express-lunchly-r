@@ -73,14 +73,16 @@ class User {
     const results = await db.query(
       `SELECT username,
               first_name,
-              last_name,
-              phone,
-              join_at,
-              last_login_at
+              last_name
         FROM users
         `
     );
+    const users = results.rows;
 
+    if (!users){
+      throw new Error(`Users not found.`);
+    }
+    return users;
   }
 
   /** Get: get user by username
