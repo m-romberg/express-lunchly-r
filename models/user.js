@@ -122,6 +122,35 @@ class User {
    */
 
   static async messagesFrom(username) {
+    const mResults = await db.query(
+      `SELECT id,
+              to_username,
+              body,
+              sent_at,
+              read_at
+          FROM messages AS m
+          WHERE from_username = $1`,
+      [username]
+    );
+    const messages = mResults.rows;
+
+    for (let msg of messages) {
+      const to_username = msg.to_username;
+      const uResults = await db.query(
+        `SELECT username,
+                first_name,
+                last_name,
+                phone
+            FROM users
+            WHERE username=$1`,
+        [to_username]
+      );
+      const user = uResults.rows[0];
+      delete msg.to_username;
+      msg.to_user = user;
+    };
+
+    return messages;
   }
 
   /** Return messages to this user.
