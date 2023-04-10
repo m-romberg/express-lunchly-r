@@ -25,7 +25,7 @@ class User {
     );
     //console.log("@@@ RESULTS:",results.rows);
     const user = results.rows[0];
-    if (!user){
+    if (!user) {
       throw new Error(`Did not create user ${username}.`);
     }
     User.updateLoginTimestamp(user.username);
@@ -58,10 +58,10 @@ class User {
         SET last_login_at = CURRENT_TIMESTAMP
         WHERE username=$1
         RETURNING username`,
-        [username]
+      [username]
     );
     const user = results.rows[0];
-    if (!user){
+    if (!user) {
       throw new Error();
     }
   }
@@ -79,7 +79,7 @@ class User {
     );
     const users = results.rows;
 
-    if (!users){
+    if (!users) {
       throw new Error(`Users not found.`);
     }
     return users;
@@ -107,7 +107,7 @@ class User {
     );
     const user = results.rows[0];
 
-    if (!user){
+    if (!user) {
       throw new Error(`User ${username} not found.`);
     }
     return user;
@@ -122,35 +122,37 @@ class User {
    */
 
   static async messagesFrom(username) {
+
     const mResults = await db.query(
       `SELECT id,
-              to_username,
+              username,
+              first_name,
+              last_name,
+              phone,
               body,
               sent_at,
               read_at
           FROM messages AS m
+            INNER JOIN users AS u
+            ON m.to_username = u.username
           WHERE from_username = $1`,
       [username]
     );
-    const messages = mResults.rows;
+    const messagesData = mResults.rows;
+    const messagesWithToUserData = messagesData.map(m => ({
+      id: m.id,
+      to_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }));
 
-    for (let msg of messages) {
-      const to_username = msg.to_username;
-      const uResults = await db.query(
-        `SELECT username,
-                first_name,
-                last_name,
-                phone
-            FROM users
-            WHERE username=$1`,
-        [to_username]
-      );
-      const user = uResults.rows[0];
-      delete msg.to_username;
-      msg.to_user = user;
-    };
-
-    return messages;
+    return messagesWithToUserData;
   }
 
   /** Return messages to this user.
@@ -167,3 +169,38 @@ class User {
 
 
 module.exports = User;
+
+
+  // ##### Original non-optimized version #####
+  // static async messagesFrom(username) {
+
+  //   const mResults = await db.query(
+  //     `SELECT id,
+  //             to_username,
+  //             body,
+  //             sent_at,
+  //             read_at
+  //         FROM messages AS m
+  //         WHERE from_username = $1`,
+  //     [username]
+  //   );
+  //   const messages = mResults.rows;
+
+  //   for (let msg of messages) {
+  //     const to_username = msg.to_username;
+  //     const uResults = await db.query(
+  //       `SELECT username,
+  //               first_name,
+  //               last_name,
+  //               phone
+  //           FROM users
+  //           WHERE username=$1`,
+  //       [to_username]
+  //     );
+  //     const user = uResults.rows[0];
+  //     delete msg.to_username;
+  //     msg.to_user = user;
+  //   };
+
+  //   return messages;
+  // }
