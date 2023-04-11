@@ -122,16 +122,15 @@ class User {
    */
 
   static async messagesFrom(username) {
-
     const mResults = await db.query(
-      `SELECT id,
-              username,
-              first_name,
-              last_name,
-              phone,
-              body,
-              sent_at,
-              read_at
+      `SELECT u.username,
+              u.first_name,
+              u.last_name,
+              u.phone,
+              m.id,
+              m.body,
+              m.sent_at,
+              m.read_at
           FROM messages AS m
             INNER JOIN users AS u
             ON m.to_username = u.username
@@ -164,6 +163,36 @@ class User {
    */
 
   static async messagesTo(username) {
+    const mResults = await db.query(
+      `SELECT u.username,
+              u.first_name,
+              u.last_name,
+              u.phone,
+              m.id,
+              m.body,
+              m.sent_at,
+              m.read_at
+          FROM messages AS m
+            INNER JOIN users AS u
+            ON m.from_username = u.username
+          WHERE to_username = $1`,
+      [username]
+    );
+    const messagesData = mResults.rows;
+    const messagesWithFromUserData = messagesData.map(m => ({
+      id: m.id,
+      from_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }));
+
+    return messagesWithFromUserData;
   }
 }
 
