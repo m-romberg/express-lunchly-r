@@ -3,7 +3,6 @@
 /** User of the site. */
 
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const db = require("../db");
 const { UnauthorizedError, NotFoundError, BadRequestError } = require("../expressError");
 const { BCRYPT_WORK_FACTOR } = require("../config");
@@ -16,7 +15,6 @@ class User {
   //TODO: update sql weirdness into try/catch
   static async register({ username, password, first_name, last_name, phone }) {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-
     const results = await db.query(
       `INSERT INTO users (username, password, first_name, last_name, phone)
         VALUES ($1, $2, $3, $4, $5)
@@ -135,8 +133,8 @@ class User {
     );
     const messagesData = mResults.rows;
 
-    if (!messagesData){
-      throw new NotFoundError(`Could not find messages from ${username}.`)
+    if (!messagesData) {
+      throw new NotFoundError(`Could not find messages from ${username}.`);
     };
 
     const messagesWithToUserData = messagesData.map(m => ({
@@ -180,8 +178,8 @@ class User {
       [username]
     );
     const messagesData = mResults.rows;
-    if (!messagesData){
-      throw new NotFoundError(`Could not find messages to ${username}.`)
+    if (!messagesData) {
+      throw new NotFoundError(`Could not find messages to ${username}.`);
     };
 
     const messagesWithFromUserData = messagesData.map(m => ({
