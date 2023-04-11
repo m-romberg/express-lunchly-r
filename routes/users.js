@@ -2,6 +2,7 @@
 
 const Router = require("express").Router;
 const router = new Router();
+const User = require("../models/user")
 
 
 /** GET / - get list of users.
@@ -10,6 +11,9 @@ const router = new Router();
  *
  **/
 
+router.get("/", async function (req, res) {
+
+});
 
 /** GET /:username - get detail of users.
  *
