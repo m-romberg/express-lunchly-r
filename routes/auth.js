@@ -3,7 +3,6 @@
 const Router = require("express").Router;
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
-const axios = require("axios");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError } = require("../expressError");
 const router = new Router();
@@ -16,6 +15,7 @@ router.post("/login", async function (req, res) {
 
   if (isAuthenticated === true) {
     const token = jwt.sign({ username }, SECRET_KEY);
+    User.updateLoginTimestamp(username);
     return res.json({ token });
   }
   throw new UnauthorizedError(`Invalid username/password`);
@@ -37,15 +37,7 @@ router.post("/register", async function (req, res) {
                         last_name,
                         phone });
 
-  console.log("newUser", newUser);
-  console.log("{ username, password}", { username, password});
-
-  const resp = await axios.post("/login", { username, password});
-
-  console.log("resp", resp);
-  const token = resp.data.token;
-  console.log("token", token);
-
+  const token = jwt.sign({ username }, SECRET_KEY);
   return res.json({ token });
 });
 
