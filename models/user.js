@@ -13,7 +13,7 @@ class User {
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
-
+  //TODO: update sql weirdness into try/catch
   static async register({ username, password, first_name, last_name, phone }) {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
@@ -28,7 +28,8 @@ class User {
     if (!user) {
       throw new BadRequestError(`Did not create user ${username}.`);
     }
-    User.updateLoginTimestamp(user.username);
+
+    await User.updateLoginTimestamp(user.username);
     return user;
   }
 
@@ -67,7 +68,7 @@ class User {
 
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
-
+  //TODO: when getting lots of data, give some structure! order by!
   static async all() {
     const results = await db.query(
       `SELECT username,
@@ -77,10 +78,6 @@ class User {
         `
     );
     const users = results.rows;
-
-    if (users===undefined){
-      throw new NotFoundError(`Users not found.`)
-    }
     return users;
   }
 
