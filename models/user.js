@@ -5,7 +5,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
-const { UnauthorizedError, NotFoundError } = require("../expressError");
+const { UnauthorizedError, NotFoundError, BadRequestError } = require("../expressError");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class User {
@@ -26,7 +26,7 @@ class User {
     //console.log("@@@ RESULTS:",results.rows);
     const user = results.rows[0];
     if (!user) {
-      throw new Error(`Did not create user ${username}.`);
+      throw new BadRequestError(`Did not create user ${username}.`);
     }
     User.updateLoginTimestamp(user.username);
     return user;
@@ -41,7 +41,6 @@ class User {
         WHERE username = $1`,
       [username]);
     const user = results.rows[0];
-    console.log("@@@ User:", user);
     if (user) {
       if (await bcrypt.compare(password, user.password) === true) {
         return true;
@@ -62,7 +61,7 @@ class User {
     );
     const user = results.rows[0];
     if (!user) {
-      throw new Error();
+      throw new NotFoundError(`Could not find user ${username}.`);
     }
   }
 
@@ -79,8 +78,8 @@ class User {
     );
     const users = results.rows;
 
-    if (!users) {
-      throw new Error(`Users not found.`);
+    if (users===undefined){
+      throw new NotFoundError(`Users not found.`)
     }
     return users;
   }
@@ -108,7 +107,7 @@ class User {
     const user = results.rows[0];
 
     if (!user) {
-      throw new Error(`User ${username} not found.`);
+      throw new NotFoundError(`User ${username} not found.`);
     }
     return user;
   }
@@ -138,6 +137,11 @@ class User {
       [username]
     );
     const messagesData = mResults.rows;
+
+    if (!messagesData){
+      throw new NotFoundError(`Could not find messages from ${username}.`)
+    };
+
     const messagesWithToUserData = messagesData.map(m => ({
       id: m.id,
       to_user: {
@@ -179,6 +183,10 @@ class User {
       [username]
     );
     const messagesData = mResults.rows;
+    if (!messagesData){
+      throw new NotFoundError(`Could not find messages to ${username}.`)
+    };
+
     const messagesWithFromUserData = messagesData.map(m => ({
       id: m.id,
       from_user: {
